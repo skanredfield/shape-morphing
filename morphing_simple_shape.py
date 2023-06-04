@@ -12,6 +12,8 @@ WORLD_HEIGHT = 500
 base_img: Mat = None
 drawing_img: Mat = None
 
+morphed_shape: MorphedPolygon = None
+
 def show_simple_unfilled_shapes_morphing(window_name, window_width, window_height):
     global base_img, drawing_img
 
@@ -20,15 +22,21 @@ def show_simple_unfilled_shapes_morphing(window_name, window_width, window_heigh
 
     drawing_img = np.zeros((window_height, window_width, 3), np.uint8)
 
-    shape1 = Polygon((50, 50), (150, 50), (150, 150), (50, 150))
+    shape1 = Polygon.from_world_points((50, 50), (150, 50), (150, 150), (50, 150))
     drawing_img = ShapeRenderer.draw_polygon(drawing_img, shape1, (0, 255, 0), 2)
-    print('Shape1: ', shape1)
+    print('Shape 1:\n', shape1)
 
-    shape2 = Polygon((300, 80), (370, 40), (440, 80), (410, 160), (330, 160))
+    shape2 = Polygon.from_world_points((300, 80), (370, 40), (440, 80), (410, 160), (330, 160))
     drawing_img = ShapeRenderer.draw_polygon(drawing_img, shape2, (255, 0, 0), 2)
-    print('Shape2: ', shape2)
+    print('Shape 2:\n', shape2)
 
     base_img = drawing_img.copy()
+
+    global morphed_shape
+    morphed_shape = MorphedPolygon(shape1, shape2, (250, 350))
+    morphed_shape.morph(0)
+    drawing_img = ShapeRenderer.draw_polygon(drawing_img, morphed_shape.resulting_poly, (0, 0, 255), 2)
+    print('Morphed shape:\n', morphed_shape.resulting_poly)
 
     
     while cv2.getWindowProperty(window_name, 0) >= 0:
@@ -38,11 +46,12 @@ def show_simple_unfilled_shapes_morphing(window_name, window_width, window_heigh
             break
 
 def onBlendValueChanged(val):
-    global base_img, drawing_img
+    global base_img, drawing_img, morphed_shape
     value01 = val / 100.0
     drawing_img = base_img.copy()
-    if val != 0:
-        drawing_img = cv2.line(drawing_img, (250, 400), (250 + val, 400), (0, 0, 255), 2)
+
+    morphed_shape.morph(value01)
+    drawing_img = ShapeRenderer.draw_polygon(drawing_img, morphed_shape.resulting_poly, (0, 0, 255), 2)
 
 set_world_size(WORLD_WIDTH, WORLD_HEIGHT)
 show_simple_unfilled_shapes_morphing("Simple Shapes", WORLD_WIDTH, WORLD_HEIGHT)
