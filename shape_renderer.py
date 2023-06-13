@@ -13,3 +13,9 @@ class ShapeRenderer:
         image = cv2.line(image, poly.world_points[-1], poly.world_points[0], color, thickness)
         # print("Drawing a line between ", poly.world_points[-1], " and ", poly.world_points[0],)
         return image
+    
+    @staticmethod
+    def draw_points(image: Mat, poly: Polygon, color):
+        for p in poly.world_points:
+            image = cv2.circle(image, p, 1, color)
+        return image
