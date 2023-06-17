@@ -46,6 +46,10 @@ class Polygon(Shape):
         polygon.world_points = world_points
         return polygon
     
+    def renormalize(self, scale_x, scale_y):
+        self.local_points = [(x * scale_x, y * scale_y) for (x, y) in self.local_points]
+        self.update_world_points()
+    
     def update_world_points(self):
         self.world_points = [self.local_to_world(p, self.world_centroid) for p in self.local_points]
     
@@ -65,7 +69,7 @@ class Polygon(Shape):
 
 class MorphedPolygon(Polygon):
     
-    def __init__(self, poly1: Polygon, poly2: Polygon, world_centroid) -> None:
+    def __init__(self, poly1: Polygon, poly2: Polygon, world_centroid, num_subdivisions: int = 100) -> None:
         self.poly1 = poly1
         self.poly2 = poly2
         self.resulting_poly = None
@@ -94,8 +98,8 @@ class MorphedPolygon(Polygon):
 
 
 
-        self.initial_poly = subdivide(self.poly1, 20)
-        self.final_poly = subdivide(self.poly2, 20)
+        self.initial_poly = subdivide(self.poly1, num_subdivisions)
+        self.final_poly = subdivide(self.poly2, num_subdivisions)
         self.resulting_poly = Polygon(*self.initial_poly.local_points)
 
         self.resulting_poly.world_centroid = world_centroid
