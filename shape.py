@@ -1,5 +1,5 @@
 from itertools import tee
-from math import sqrt
+from math import sqrt, ceil, gcd
 from world_settings import WORLD_SPACE_REFERENCE_WIDTH, WORLD_SPACE_REFERENCE_HEIGHT
 
 
@@ -69,46 +69,38 @@ class Polygon(Shape):
 
 class MorphedPolygon(Polygon):
     
-    def __init__(self, poly1: Polygon, poly2: Polygon, world_centroid, num_subdivisions: int = 100) -> None:
+    def __init__(self, poly1: Polygon, poly2: Polygon, world_centroid, subdivision_level: int = 1) -> None:
         self.poly1 = poly1
         self.poly2 = poly2
         self.resulting_poly = None
-        
-        # if self.poly1.num_points > self.poly2.num_points:
-        #     print("Initial shape is larger")
-        #     # initial shape is larger
-        #     self.resulting_poly = Polygon(*self.poly1.local_points)
-        #     self.initial_poly = self.poly2
-        #     self.final_poly = self.poly1
-        # else:
-        #     print("Final shape is larger")
-        #     # final shape is larger
-        #     self.resulting_poly = Polygon(*self.poly2.local_points)
-        #     self.initial_poly = self.poly1
-        #     self.final_poly = self.poly2
+        self.transformation_map = []
 
-        #     closest_point = self.find_closest_local_point(
-        #         self.resulting_poly.local_points[-1], 
-        #         self.initial_poly.local_points
-        #     )
-        #     # self.resulting_poly.local_points[-1] = closest_point
-        #     # self.initial_poly.local_points[-1] = self.resulting_poly.local_points[-1]
-        #     # self.final_poly.local_points[-1] = self.resulting_poly.local_points[-1]
-        #     self.initial_poly.local_points[-1] = self.initial_poly.local_points[-2]
-
-
+        num_subdivisions = self.poly1.num_points * self.poly2.num_points * subdivision_level
 
         self.initial_poly = subdivide(self.poly1, num_subdivisions)
         self.final_poly = subdivide(self.poly2, num_subdivisions)
         self.resulting_poly = Polygon(*self.initial_poly.local_points)
 
+        # create the transformation map based on the closest points
+        for i in range(0, self.initial_poly.num_points):
+            p_i = self.initial_poly.local_points[i]
+            p_f = self.find_closest_local_point(
+                p_i, 
+                self.final_poly.local_points
+            )
+            self.transformation_map.append((p_i, p_f))
+
         self.resulting_poly.world_centroid = world_centroid
         self.resulting_poly.update_world_points()
 
-    def morph(self, blend_value01):
+    def morph(self, blend_value01, use_map=False):
         for i in range(0, self.initial_poly.num_points):
-            p_i = self.initial_poly.local_points[i]
-            p_f = self.final_poly.local_points[i]
+            if use_map:
+                p_i, p_f = self.transformation_map[i]
+            else:
+                p_i = self.initial_poly.local_points[i]
+                p_f = self.final_poly.local_points[i]
+
             x = p_i[0] * (1.0 - blend_value01) + p_f[0] * (blend_value01)
             y = p_i[1] * (1.0 - blend_value01) + p_f[1] * (blend_value01)
             self.resulting_poly.local_points[i] = (x, y)
@@ -139,7 +131,7 @@ def sum_points(points):
 
 def subdivide(poly: Polygon, new_num_points = 100) -> Polygon:
     num_edges = poly.num_points
-    num_points_per_edge = int(new_num_points / num_edges)
+    num_points_per_edge = ceil(new_num_points / num_edges)
     new_local_points = []
     increment = 1.0 / num_points_per_edge
     a, b = tee(poly.local_points)

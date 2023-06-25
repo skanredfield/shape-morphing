@@ -16,6 +16,8 @@ def place_point(x, y):
     curr_point = (x, y)
     points.append(curr_point)
 
+    # Uncomment to show coordinates
+    # --------------------------------
     # font = cv2.FONT_HERSHEY_SIMPLEX
     # coords_text = f'({x},{y})'
     # cv2.putText(img, coords_text, (x+10, y+10), font, 0.5, (255, 0, 0), 2)

@@ -8,13 +8,15 @@ from world_settings import set_world_size
 from math import sin
 
 
-IS_DRAWING_SHAPES = True
-IS_RENDERING_LINES_DURING_ANIMATION = False
-
 WORLD_WIDTH = 800
 WORLD_HEIGHT = 600
 
-NUM_SUBDIVISIONS = 50
+IS_DRAWING_SHAPES = True
+IS_RENDERING_LINES_DURING_ANIMATION = True
+
+SUBDIVISION_LEVEL = 1
+USE_TRANSFORMATION_MAP = False
+
 
 base_img: Mat = None
 drawing_img: Mat = None
@@ -44,6 +46,7 @@ def show_simple_unfilled_shapes_morphing(window_name, window_width, window_heigh
     
     cv2.namedWindow(window_name)
     cv2.createTrackbar("Blend", window_name, 0, 100, onBlendValueChanged)
+    # TODO: perhaps add a button later (requires compiling qt libraries)
     # cv2.createButton("Play", onPlayButtonPressed, None, cv2.QT_PUSH_BUTTON, 1)
 
     drawing_img = ShapeRenderer.draw_polygon(drawing_img, shape1, (0, 255, 0), 2)
@@ -51,19 +54,12 @@ def show_simple_unfilled_shapes_morphing(window_name, window_width, window_heigh
     drawing_img = ShapeRenderer.draw_polygon(drawing_img, shape2, (255, 0, 0), 2)
     print('Shape 2:\n', shape2)
 
-    
-    # subdivided_poly = subdivide(shape1, 100)
-    # subdivided_poly.world_centroid = (100, 300)
-    # subdivided_poly.update_world_points()
-    # drawing_img = ShapeRenderer.draw_points(drawing_img, subdivided_poly, (255, 0, 255))
-
-
     base_img = drawing_img.copy()
 
     global morphed_shape
     shape1.renormalize(2, 2)
     shape2.renormalize(2, 2)
-    morphed_shape = MorphedPolygon(shape1, shape2, (400, 400), NUM_SUBDIVISIONS)
+    morphed_shape = MorphedPolygon(shape1, shape2, (400, 400), SUBDIVISION_LEVEL)
     morphed_shape.morph(0)
     drawing_img = ShapeRenderer.draw_polygon(drawing_img, morphed_shape.resulting_poly, (0, 0, 255), 2)
     print('Morphed shape:\n', morphed_shape.resulting_poly)
@@ -89,7 +85,7 @@ def update_anim_loop():
 
     drawing_img = base_img.copy()
 
-    morphed_shape.morph(value01)
+    morphed_shape.morph(value01, USE_TRANSFORMATION_MAP)
     if IS_RENDERING_LINES_DURING_ANIMATION:
         drawing_img = ShapeRenderer.draw_polygon(drawing_img, morphed_shape.resulting_poly, (0, 0, 255), 2)
     else:
@@ -100,7 +96,7 @@ def onBlendValueChanged(val):
     value01 = val / 100.0
     drawing_img = base_img.copy()
 
-    morphed_shape.morph(value01)
+    morphed_shape.morph(value01, USE_TRANSFORMATION_MAP)
     drawing_img = ShapeRenderer.draw_polygon(drawing_img, morphed_shape.resulting_poly, (0, 0, 255), 2)
 
 def onPlayButtonPressed(*args):
